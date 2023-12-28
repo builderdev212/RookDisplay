@@ -3,44 +3,10 @@
 
 #include <Arduino.h>
 #include <FS.h>
-#include <SD.h>
-#include <SPI.h>
+
+#include "SupportLibs/png_data_types.h"
 
 #define PNG_DEBUG
-
-// Struct to store raw data read in from file.
-struct rawPNGFile {
-    size_t size = 0;
-    uint8_t *data = nullptr;
-    bool valid = true;
-};
-
-// Struct to store individual chunk data.
-struct PNGChunk {
-    uint32_t size = 0;
-    char *name = nullptr;
-    uint8_t *data = nullptr;
-    uint32_t crc = 0;
-    bool valid = true;
-};
-
-// Struct to store array of chunks.
-struct PNGChunks{
-    uint8_t num = 0;
-    PNGChunk *chunks = nullptr;
-    bool valid = true;
-};
-
-// Struct to store header info.
-struct PNGHeader {
-    uint32_t width = 0;
-    uint32_t height = 0;
-    uint8_t bitDepth = 0;
-    uint8_t colorType = 0;
-    uint8_t filterType = 0;
-    bool interlaceAdam7 = false;
-    bool valid = true;
-};
 
 class png_decode {
     public:
@@ -79,7 +45,5 @@ class png_decode {
         // Read 32b int from 8b array
         inline size_t read32BitInt(const uint8_t *data);
 };
-
-#include "png.cpp"
 
 #endif
