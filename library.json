@@ -1,0 +1,20 @@
+{
+  "name": "RookDisplay",
+  "version": "0.1",
+  "description": "A SPI display library for the ESP32S3 and the ILI9488",
+  "repository":
+  {
+    "type": "git",
+    "url": "https://github.com/builderdev212/RookDisplay"
+  },
+  "authors":
+  [
+    {
+        "name": "builderdev212",
+        "maintainer": true
+    }
+  ],
+  "frameworks": "arduino",
+  "platforms": "espressif32",
+  "headers": "RookDisplay.h"
+}
