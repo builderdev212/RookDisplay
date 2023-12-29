@@ -24,6 +24,101 @@ bool png_decode::decode(fs::FS &fs, const char *filename) {
 
     uint8_t bpp = calcBpp(header.colorType, header.bitDepth);
 
+/*   // Decompress the data.
+    uint32_t original_size = ((header.width * (header.height * bpp + 7)) / 8) + header.height;
+
+    tinfl_decompressor inflator;
+    tinfl_init(&inflator);
+
+    bool is_finished = false;
+
+    uint infile_remaining = chunks.chunks[1].size;
+
+    uint8_t *in_data_buffer = (uint8_t *)ps_calloc(INPUT_BUFFER_SIZE, sizeof(uint8_t));
+    uint8_t *out_data_buffer = (uint8_t *)ps_calloc(original_size, sizeof(uint8_t));
+    unsigned char *png_data = (unsigned char *)ps_calloc(((header.width * (header.height * bpp + 7)) / 8) + header.height, sizeof(unsigned char));
+
+    const void *next_in = in_data_buffer;
+    size_t avail_in = 0;
+    void *next_out = out_data_buffer;
+    size_t avail_out = original_size;
+    size_t total_in = 0, total_out = 0;
+
+    size_t in_bytes, out_bytes;
+    tinfl_status status;
+
+    while (!is_finished) {
+        // Input buffer is empty, so read more bytes from data.
+        if (!avail_in) {
+            size_t n = (INPUT_BUFFER_SIZE > infile_remaining) ? infile_remaining : INPUT_BUFFER_SIZE; 
+
+            memcpy(&in_data_buffer[0], &chunks.chunks[1].data[chunks.chunks[1].size-infile_remaining], n);
+            
+            next_in = in_data_buffer;
+            avail_in = n;
+
+            infile_remaining -= n;
+
+            #ifdef PNG_DEBUG
+                log_v("Copied %d bytes to buffer.", n);
+            #endif
+
+            log_v("%d", in_data_buffer);
+        }
+
+        in_bytes = avail_in;
+        out_bytes = avail_out;
+        status = tinfl_decompress(&inflator, (const mz_uint8 *)next_in, &in_bytes, out_data_buffer, (mz_uint8 *)next_out, &out_bytes, (infile_remaining ? TINFL_FLAG_HAS_MORE_INPUT : 0) | TINFL_FLAG_PARSE_ZLIB_HEADER);
+
+        avail_in -= in_bytes;
+        next_in = (const mz_uint8 *)next_in + in_bytes;
+        total_in += in_bytes;
+
+        avail_out -= out_bytes;
+        next_out = (mz_uint8 *)next_out + out_bytes;
+        total_out += out_bytes;
+        
+
+        if ((status <= TINFL_STATUS_DONE) || (!avail_out)) {
+            // Output buffer is full, or decompression is done, so write buffer to output file.
+            memcpy(&png_data[total_out], &out_data_buffer[0], OUTPUT_BUFFER_SIZE - (uint)avail_out);
+
+            next_out = out_data_buffer;
+            avail_out = OUTPUT_BUFFER_SIZE;
+        }
+
+        // If status is <= TINFL_STATUS_DONE then either decompression is done or something went wrong.
+        if (status <= TINFL_STATUS_DONE) {
+            if (status == TINFL_STATUS_DONE) {
+                // Decompression completed successfully.
+                is_finished = true;
+            }
+            else {
+                // Decompression failed.
+                log_e("Error: tinfl_decompressed failed. (%i)", status);
+                return false;
+            }
+        }
+    }
+    */
+
+    tinfl_decompressor inflator;
+    tinfl_init(&inflator);
+
+    size_t in_bytes = chunks.chunks[1].size;
+	size_t out_bytes;
+    uint8_t *next_out;
+
+    unsigned char *png_data = (unsigned char *)ps_calloc(((header.width * (header.height * bpp + 7)) / 8) + header.height, sizeof(unsigned char));
+
+    tinfl_status status = tinfl_decompress(&inflator, (const mz_uint8 *)chunks.chunks[1].data, &in_bytes, png_data, (mz_uint8 *)next_out, &out_bytes, TINFL_FLAG_HAS_MORE_INPUT | TINFL_FLAG_PARSE_ZLIB_HEADER);
+
+    if (status < TINFL_STATUS_DONE) {
+		// Decompression failed.
+        log_e("Error: tinfl_decompressed failed. (%i)", status);
+        return false;
+	}
+
     return true;
 }
 
@@ -187,7 +282,7 @@ PNGChunk png_decode::readChunk(const uint8_t *data) {
 
     // Store the data in PSRAM
     if (newChunk.size != 0) {
-        newChunk.data = (uint8_t *)ps_calloc(newChunk.size, sizeof(uint8_t));
+        newChunk.data = (unsigned char *)ps_calloc(newChunk.size, sizeof(char));
         if (newChunk.data == nullptr) {
             #ifdef PNG_DEBUG
                 log_w("Failed to allocate data in PSRAM.");
